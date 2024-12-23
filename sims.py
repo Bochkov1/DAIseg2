@@ -1,56 +1,119 @@
 # --- Demographic model ---
 
 
-import msprime 
+import msprime
 import numpy as np
 
-def history_archaic(gen_time, len_seq, rr,mu, n_e, t,  n, rand_sd, n_neand, t_neand_samples, n_eu, n_eu_growth, t_eu_growth, n_eu_bottleneck, gr_rt, p_admix ):
-   
-    n_ANC, n_ND, n_AMH, n_OOA,n_AF, n_EU = n_e
-    t_NEAND_migration, t_NEAND_AMH, t_OOF_AF = t
-
+def history_archaic(
+    gen_time,
+    len_seq,
+    rr,
+    mu,
+    n_e,
+    t,  # t включает t_SECOND_NEAND_MIGRATION
+    n,
+    rand_sd,
+    n_neand,
+    t_neand_samples,
+    n_eu,
+    n_eu_growth,
+    t_eu_growth,
+    n_eu_bottleneck,
+    gr_rt,
+    p_admix,
+    p_admix2
+):
+    n_ANC, n_ND, n_AMH, n_OOA, n_AF, n_EU = n_e
+    t_NEAND_migration, t_NEAND_AMH, t_OOF_AF, t_SECOND_NEAND_MIGRATION = t
     
     demography = msprime.Demography()
     
+    print("t_NEAND_migration:", t_NEAND_migration)
+    print("t_SECOND_NEAND_MIGRATION:", t_SECOND_NEAND_MIGRATION)
+    print("t_OOF_AF:", t_OOF_AF)
+    print("t_NEAND_AMH:", t_NEAND_AMH)
     
-    demography.add_population(name="AF", initial_size=n_AF)
+    
+#    demography.add_population(name="AF", initial_size=n_AF, initially_active=True)
+#    demography.add_population(name="EU", initial_size=n_EU)
+#    demography.add_population(name="AMH", initial_size=n_AMH, initially_active=False)
+#    demography.add_population(name="NEAND", initial_size=n_ND, initially_active=False)
+#    demography.add_population(name="ANCES", initial_size=n_ANC, initially_active=False)  #common population for Neanderthal and AMH
+#    demography.add_population(name="OOA", initial_size = n_OOA, initially_active=False)
+
+    demography.add_population(name="AF", initial_size=n_AF, initially_active=True)
     demography.add_population(name="EU", initial_size=n_EU)
-    demography.add_population(name="AMH", initial_size=n_AMH)
-    demography.add_population(name="NEAND", initial_size=n_ND)
-    demography.add_population(name="ANCES", initial_size=n_ANC)  #common population for Neanderthal and AMH
-    demography.add_population(name="OOA", initial_size = n_OOA)
+    demography.add_population(name="EU1", initial_size=n_EU, initially_active=False)
+    demography.add_population(name="AMH", initial_size=n_AMH, initially_active=False)
+    demography.add_population(name="NEAND", initial_size=n_ND, initially_active=False)
+    demography.add_population(name="NEAND1", initial_size=n_ND, initially_active=False)
+    demography.add_population(name="NEAND2", initial_size=n_ND, initially_active=False)
+    demography.add_population(name="ANCES", initial_size=n_ANC, initially_active=False)  # common population for Neanderthal and AMH
+    demography.add_population(name="OOA", initial_size=n_OOA, initially_active=False)
     
-    
-    demography.add_population_parameters_change(time=0, initial_size=n_EU, population=1, growth_rate=gr_rt)
-    demography.add_population_parameters_change(time=t_eu_growth, initial_size=n_eu_growth, population=1, growth_rate=0)   
-    
-    demography.add_admixture(time=t_NEAND_migration, derived="EU", ancestral=["OOA", "NEAND"], 
-                             proportions=[1-p_admix, p_admix])
+#    demography.add_admixture(time=t_NEAND_migration, derived="EU", ancestral=["OOA", "NEAND"],
+#                             proportions=[1-p_admix, p_admix])
 
 
     demography.add_population_split(time = t_OOF_AF, derived=["AF", "OOA"], ancestral="AMH")
     demography.add_population_split(time = t_NEAND_AMH, derived=["AMH", "NEAND"], ancestral="ANCES")
 
-#    print(demography.debug())
+    
+    # Параметры роста для EU
+    demography.add_population_parameters_change(
+        time=0, initial_size=n_EU, population="EU", growth_rate=gr_rt
+    )
+    demography.add_population_parameters_change(
+        time=t_eu_growth, initial_size=n_eu_growth, population="EU", growth_rate=0
+    )
+
+    # Разделения популяций
+#    demography.add_population_split(time = t_NEAND_AMH, derived=["AMH", "NEAND"], ancestral="ANCES")
+#
+#    demography.add_population_split(time = t_OOF_AF, derived=["AF", "OOA"], ancestral="AMH")
+#
+#
+    demography.add_population_split(time = t_NEAND_migration + 1, derived=["NEAND1", "NEAND2"], ancestral="NEAND")
+#
+
+
+   #  Первая волна
+    demography.add_admixture(
+        time=t_NEAND_migration,
+        derived="EU1",
+        ancestral=["OOA", "NEAND1"],
+        proportions=[1 - p_admix, p_admix]
+    )
+    #     Вторая волна
+    demography.add_admixture(
+        time=t_SECOND_NEAND_MIGRATION,
+        derived="EU",
+        ancestral=["EU1", "NEAND2"],
+        proportions=[1 - p_admix2, p_admix2]
+    )
+
+
+    
+    demography.sort_events()
+    print(demography.debug())
 
     ts = msprime.sim_ancestry(
-        samples=        [       
-                msprime.SampleSet(n_eu, ploidy=1, population='EU'), 
-                msprime.SampleSet(n, ploidy=1, population='AF'),
-                msprime.SampleSet(n_neand, ploidy=1, population='NEAND', time = t_neand_samples)          
-               
+        samples= [
+            msprime.SampleSet(n_eu, ploidy=1, population='EU',time = 1),
+            msprime.SampleSet(n, ploidy=1, population='AF', time = 1),
+            msprime.SampleSet(n_neand, ploidy=1, population='NEAND', time = t_NEAND_migration + 2)
         ],
-    
-        ploidy=1,    
+        ploidy=1,
         sequence_length=len_seq,
-        recombination_rate=rr, 
+        recombination_rate=rr,
         demography=demography,
-        record_migrations=True   
+        record_migrations=True
     )
    
-    
-    ts = msprime.sim_mutations(ts, rate=mu)    
+    ts = msprime.sim_mutations(ts, rate=mu)
     return ts
+
+
 
 
 #несколько вспомогательных функций

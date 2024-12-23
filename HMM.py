@@ -5,7 +5,7 @@ import math
 
 
 #number of states
-N=2 
+N=2
 cover_cut=0.8
 
 
@@ -25,7 +25,7 @@ def initA(cut,RR,Ti, a) -> np.array:
 #Taf: Time out of Africa
 #Tn: Time of Split between Nd and Sapiens
 
-def initB(m,cut, lmbd, n_st) -> np.array: 
+def initB(m,cut, lmbd, n_st) -> np.array:
     
     B = np.empty(shape=(2,n_st,n_st))
     meani = lmbd[0]
@@ -58,7 +58,7 @@ def initB(m,cut, lmbd, n_st) -> np.array:
     Paf[0]=1-sumaf
     Pn[0]=1-sumn
     
-    for i in range(n_st): 
+    for i in range(n_st):
         for j in range(n_st):
             B[0][i][j]=Paf[i]*Pn[j]
             B[1][i][j]=Pn[i]*Pi[j]
@@ -85,7 +85,7 @@ def initB_arch_cover(m,cut, lmbd, n_st, cover):
 
     Pi[0], Paf[0], Pn[0], Pi2[0] = 1-sumi, 1-sumaf, 1-sumn, 1-sumi2
     
-    for i in range(n_st): 
+    for i in range(n_st):
         for j in range(n_st):
             B[0][i][j]=Paf[i]*Pn[j]
             B[1][i][j]=Pn[i]*Pi2[j]
@@ -101,7 +101,7 @@ def initB_arch_cover(m,cut, lmbd, n_st, cover):
 #Taf: Time out of Africa
 #Tn: Time of Split between Nd and Sapiens
 
-def initBwN(cut, lmbd, n_st) -> np.array: 
+def initBwN(cut, lmbd, n_st) -> np.array:
     
     B = np.empty(shape=(2,n_st))
     meann = lmbd[1]
@@ -128,7 +128,7 @@ def initBwN(cut, lmbd, n_st) -> np.array:
     Paf[0]=1-sumaf
     Pn[0]=1-sumn
     
-    for i in range(n_st): 
+    for i in range(n_st):
         B[0][i]=Paf[i]
         B[1][i]=Pn[i]
                
@@ -149,7 +149,7 @@ def viterbi_modified(V, initial_distribution, a, b_our_mas, b_Skov, archaic_cove
 
     else:
         
-        omega[0, :] = np.log(initial_distribution * b_Skov[:, V[0][0]])        
+        omega[0, :] = np.log(initial_distribution * b_Skov[:, V[0][0]])
  
     prev = np.zeros((T - 1, M))
  
@@ -230,7 +230,7 @@ def viterbi_modified2(V, initial_distribution, a, b_our_mas, b_Skov, archaic_cov
 
 
         
-    omega[0, :] = np.log(initial_distribution * b_Skov[:, V[0][0]])        
+    omega[0, :] = np.log(initial_distribution * b_Skov[:, V[0][0]])
  
     prev = np.zeros((T - 1, M))
  
@@ -281,8 +281,8 @@ import EM
 def posterior(o, initial_distribution, a, b_our_mas, b_Skov, archaic_cover, gaps, cut_off):
     
     alpha, sc_factors = EM.alpha_scaled_opt_gaps(a,b_Skov, b_our_mas, o, initial_distribution, gaps, archaic_cover)
-    beta = EM.beta_scaled_opt_gaps(a, b_Skov, b_our_mas, o, sc_factors, gaps, archaic_cover)    
-    gamma = np.array(EM.def_gamma_gaps(alpha, beta, gaps)) 
+    beta = EM.beta_scaled_opt_gaps(a, b_Skov, b_our_mas, o, sc_factors, gaps, archaic_cover)
+    gamma = np.array(EM.def_gamma_gaps(alpha, beta, gaps))
 
 
     result=[]
@@ -294,7 +294,6 @@ def posterior(o, initial_distribution, a, b_our_mas, b_Skov, archaic_cover, gaps
 
 
     return result
-
 
 
 
