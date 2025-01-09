@@ -145,9 +145,9 @@ def get_migrating_tracts_ind(ts, pop_name, ind, T_anc):
     mig = ts.tables.migrations
     migration_int = []
 
-    for tree in ts.trees():  #перебираем все деревья. Как известно, каждому дереву отвечает участок днк  
+    for tree in ts.trees():  #перебираем все деревья. Как известно, каждому дереву отвечает участок днк
         anc_node = ind #chose observable node
-        while tree.time( tree.parent(anc_node) ) <= T_anc : #идем в прошлое до вершины anc_node по предкам нашего мексиканца, пока не наткнемся на миграцию 
+        while tree.time( tree.parent(anc_node) ) <= T_anc : #идем в прошлое до вершины anc_node по предкам нашего мексиканца, пока не наткнемся на миграцию
             anc_node = tree.parent(anc_node)
         migs = np.where(mig.node == anc_node)[0] #выбирем все строки, соответствующие заданному узлу
 
@@ -165,9 +165,9 @@ def get_migrating_tracts_ind(ts, pop_name, ind, T_anc):
     migration_int = migration_int2
     
     mi = remove_one(migration_int)
-    mi.sort()  
+    mi.sort()
 
-    return mi 
+    return mi
 
 
 # return European tracts with input=Neanderthal tracts
@@ -183,11 +183,11 @@ def tracts_eu(tr_nd, seq_length):
     if tr_nd[-1][1]!=seq_length-1:
         result.append([tr_nd[-1][1]+1,seq_length-1])
       
-    return result      
+    return result
 
 
 
-#from Skov 
+#from Skov
 def print_neand_dosages(ts):
     
     seq_len = ts.get_sequence_length()
@@ -217,12 +217,12 @@ def print_neand_dosages(ts):
         sorted_segs = segs[np.argsort(segs[:, 0]), :]
         for higher in sorted_segs:
             if len(merged) == 0:
-                merged = np.vstack([merged, higher])            
+                merged = np.vstack([merged, higher])
             else:
                 lower = merged[-1, :]
                 if higher[0] <= lower[1]:
                     upper_bound = max(lower[1], higher[1])
-                    merged[-1, :] = (lower[0], upper_bound) 
+                    merged[-1, :] = (lower[0], upper_bound)
                 else:
                     merged = np.vstack([merged, higher])
         if get_segs:

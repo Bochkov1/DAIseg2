@@ -9,7 +9,7 @@ import useful as usfl
 
     
 
-N=2 
+N=3
 # each window is covered by cover[t] parameter which in [-0.001...0.999]. Cover_cut remove windows with low covering and transforms method to Skov. 
 cover_cut = 0.8 
 

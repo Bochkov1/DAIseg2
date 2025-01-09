@@ -36,7 +36,7 @@ args = parser.parse_args()
 dict_all = usfl.main_read2(args.prepared_file)
 domain = usfl.read_bed(args.bed)
 seq_start, seq_end = domain[0][0], domain[-1][1]
-N = 2 # number of hidden states
+N = 3 # number of hidden states
 GEN_time, MU, RR, L, Lambda_0 = usfl.read_par_HMM(args.HMM_par)
 n_eu = len(dict_all[list(dict_all.keys())[0]]['Obs'])
 
@@ -101,8 +101,9 @@ def run_daiseg(lmbd_opt,seq, n_st, idx, start, ar_cover):
 
     
     B_our_mas = np.array([HMM.initB_arch_cover(MU,L, lmbd_opt, n_st, 0.1+i*0.1) for i in range(10)])
+    print("Shape of b_mas:", B_our_mas.shape)
     B_Skov = HMM.initBwN(L, lmbd_opt[0:3], n_st)
-    P=[0.97, 0.03]
+    P = [0.95, 0.03, 0.02]
 
     tracts_HMM =  HMM.get_HMM_tracts(HMM.viterbi_modified(seq [idx], P, A, B_our_mas, B_Skov, ar_cover))
 
@@ -118,7 +119,7 @@ def run_daiseg_all(lmbd_0):
 
     
     for idx in range(0, n_eu):    
-        tracts_HMM=[[],[]]
+        tracts_HMM = [[] for _ in range(N)]
         for i in range(len(SEQ_mas)):
             tr=run_daiseg(lmbd_0, SEQ_mas[i], N_st, idx, seq_start_mas[i], arch_cover[i])
             for j in range(N):   
@@ -140,7 +141,7 @@ def run_daiseg_posterior(lmbd_opt,seq, n_st, idx, start, ar_cover, gaps_numbers,
     
     B_our_mas = np.array([HMM.initB_arch_cover(MU,L, lmbd_opt, n_st, 0.1+i*0.1) for i in range(10)])
     B_Skov = HMM.initBwN(L, lmbd_opt[0:3], n_st)
-    P=[0.97, 0.03]
+    P = [0.95, 0.03, 0.02]
 
     tracts_HMM =  HMM.get_HMM_tracts(HMM.posterior(seq [idx], P, A, B_our_mas, B_Skov, ar_cover, gaps_numbers, cut_off))
 
@@ -157,7 +158,7 @@ def run_daiseg_all_posterior(lmbd_0, cut_off, gaps_numbers):
 
     
     for idx in range(0, n_eu):    
-        tracts_HMM=[[],[]]
+        tracts_HMM = [[] for _ in range(N)]
         for i in range(len(SEQ_mas)):
             tr=run_daiseg_posterior(lmbd_0, SEQ_mas[i], N_st, idx, seq_start_mas[i], arch_cover[i], gaps_numbers, cut_off)
             for j in range(N):   
@@ -171,7 +172,7 @@ def run_daiseg_all_posterior(lmbd_0, cut_off, gaps_numbers):
 def EM_gaps(seq, lambda_0, n_st, cover):
     return EM.EM_algorithm_gaps(P, seq, n_st, MU, RR, lambda_0, epsilon, L, int(args.EM_steps), gaps_numbers, cover )
 
-P=[0.95, 0.05]
+P = np.full(N, 1 / N)
 
 epsilon = 1e-8
 
@@ -197,20 +198,21 @@ with open(args.obs_samples,'r') as f:
     names=f.readlines()
 names=[str(names[i].replace('\n','')) for i in range(len(names))]
 
+
+
 #write into file arg.o results #Sample #Haplotype_number #Archaic tracts
 with open(args.o+'.archaic.txt', "w") as f:
-   for i in range(len(Tracts_HMM_mas)):
-       if i % 2 ==0:
-           f.write(names[int(i // 2)]+'\t0\t'+str(Tracts_HMM_mas[i][1])+'\n')
-       else:
-           f.write(names[int(i // 2)]+'\t1\t'+str(Tracts_HMM_mas[i][1])+'\n')      
+    for i in range(len(Tracts_HMM_mas)):
+        for state in range(N):
+#            print(f"i: {i}, len(Tracts_HMM_mas): {len(Tracts_HMM_mas)}")
+#            print(f"len(Tracts_HMM_mas[i]): {len(Tracts_HMM_mas[i])}, state: {state}")
+#            print(f"Длина names: {len(names)}")
+#            print("Содержимое names:", names)
+
+            f.write(names[int(i // 2)] + f'\t{state}\t' + str(Tracts_HMM_mas[i][state]) + '\n')
 
 
 with open(args.o+'.modern.txt', "w") as f:
    for i in range(len(Tracts_HMM_mas)):
-       if i % 2 ==0:
-           f.write(names[int(i // 2)]+'\t0\t'+str(Tracts_HMM_mas[i][0])+'\n')
-       else:
-           f.write(names[int(i // 2)]+'\t1\t'+str(Tracts_HMM_mas[i][0])+'\n')  
-
-
+      for state in range(N):
+            f.write(names[int(i // 2)] + f'\t{state}\t' + str(Tracts_HMM_mas[i][state]) + '\n')
