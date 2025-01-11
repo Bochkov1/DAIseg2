@@ -5,19 +5,25 @@ import math
 
 
 #number of states
-N=2
+N=3
 cover_cut=0.8
 
 
 #Ti: Introgression of Nd
-def initA(cut,RR,Ti, a) -> np.array:
-    A = np.zeros((2,2))
+def initA(t1, t2, p1, p2, L=1000, r=10 ** -8) -> np.array:
+    A = np.zeros((3,3))
     
-    A[0][1]=Ti*RR*cut*a
-    A[0][0]=1-A[0][1]
+    A[0][1]=np.exp(-L*r*t2)*(1 - np.exp(-L*r*(t1-t2)))*p1 + (1 - np.exp(-L*r*t2))*p1*(1-p2)
+    A[0][2]=(1 - np.exp(-L*r*t2))*p2
+    A[0][0] = 1 - A[0][1] - A[0][2]
  
-    A[1][0]=Ti*RR*cut*(1-a)
-    A[1][1]=1-A[1][0]
+    A[1][0]=np.exp(-L*r*t2)*(1 - np.exp(-L*r*(t1-t2)))*(1-p1)+(1 - np.exp(-L*r*t2))*(1-p1)*(1-p2)
+    A[1][2]=(1 - np.exp(-L*r*t2))*p2
+    A[1][1]=1-A[1][0] - A[1][2]
+    
+    A[2][0]=np.exp(-L*r*t2)*(1 - np.exp(-L*r*(t1-t2)))*(1-p2)+(1 - np.exp(-L*r*t2))*(1-p1)*(1-p2)
+    A[2][1]=(1 - np.exp(-L*r*t2))*p1
+    A[2][2]=1--A[2][0] - A[2][1]
     
     return A
 
@@ -25,49 +31,52 @@ def initA(cut,RR,Ti, a) -> np.array:
 #Taf: Time out of Africa
 #Tn: Time of Split between Nd and Sapiens
 
-def initB(m,cut, lmbd, n_st) -> np.array:
+def initB(mu, L, t_OOA, t_ANC, t1, t2, n_st) -> np.array:
     
-    B = np.empty(shape=(2,n_st,n_st))
-    meani = lmbd[0]
-    meann = lmbd[1]
-    meanaf = lmbd[2]
-    
-    Pi = np.empty(n_st)
-    Paf=np.empty(n_st)
-    Pn=np.empty(n_st)
+    B = np.zeros((3, n_st, n_st))
+    # Calculate lambda values for each distribution
+    lambda_OOA = mu * L * t_OOA
+    lambda_ANC = mu * L * t_ANC
+    lambda_t1 = mu * L * t1
+    lambda_t2 = mu * L * t2
 
-    
-    Pi[0]=np.exp(-meani)
-    Paf[0]=np.exp(-meanaf)
-    Pn[0]=np.exp(-meann)
-    
-    sumi=0
-    sumaf=0
-    sumn=0
-    
-    for i in range(1,n_st):
-        Pi[i]=Pi[i-1]*meani/i
-        Paf[i]=Paf[i-1]*meanaf/i
-        Pn[i]=Pn[i-1]*meann/i
-        
-        sumi=sumi+Pi[i]
-        sumaf=sumaf+Paf[i]
-        sumn=sumn+Pn[i]
+    # Precompute Poisson distributions
+    P_OOA = np.zeros(n_st)
+    P_ANC = np.zeros(n_st)
+    P_t1 = np.zeros(n_st)
+    P_t2 = np.zeros(n_st)
 
-    Pi[0]=1-sumi
-    Paf[0]=1-sumaf
-    Pn[0]=1-sumn
-    
+    # Base probabilities
+    P_OOA[0] = np.exp(-lambda_OOA)
+    P_ANC[0] = np.exp(-lambda_ANC)
+    P_t1[0] = np.exp(-lambda_t1)
+    P_t2[0] = np.exp(-lambda_t2)
+
+    # Iteratively compute Poisson probabilities
+    for i in range(1, n_st):
+        P_OOA[i] = P_OOA[i - 1] * lambda_OOA / i
+        P_ANC[i] = P_ANC[i - 1] * lambda_ANC / i
+        P_t1[i] = P_t1[i - 1] * lambda_t1 / i
+        P_t2[i] = P_t2[i - 1] * lambda_t2 / i
+
+    # Compute emission probabilities
     for i in range(n_st):
         for j in range(n_st):
-            B[0][i][j]=Paf[i]*Pn[j]
-            B[1][i][j]=Pn[i]*Pi[j]
-                  
+            # EU: P_OOA(i) * P_ANC(j)
+            B[0][i][j] = P_OOA[i] * P_ANC[j]
+            
+            # ND1: P_ANC(i) * P_t1(j)
+            B[1][i][j] = P_ANC[i] * P_t1[j]
+            
+            # ND2: P_ANC(i) * P_t2(j)
+            B[2][i][j] = P_ANC[i] * P_t2[j]
+
     return B
+
     
 def initB_arch_cover(m,cut, lmbd, n_st, cover):
     
-    B = np.empty(shape=(2,n_st,n_st))
+    B = np.empty(shape=(3,n_st,n_st))
     meani, meann, meanaf, meani2 = lmbd[0], lmbd[1]*cover, lmbd[2], lmbd[0] * cover
     Pi, Paf, Pn, Pi2 = [np.empty(n_st) for i in range(4)]
     Pi[0], Paf[0], Pn[0], Pi2[0] = np.exp(-meani), np.exp(-meanaf), np.exp(-meann), np.exp(-meani2)
@@ -89,6 +98,7 @@ def initB_arch_cover(m,cut, lmbd, n_st, cover):
         for j in range(n_st):
             B[0][i][j]=Paf[i]*Pn[j]
             B[1][i][j]=Pn[i]*Pi2[j]
+            B[2][i][j]= Pn[i]*Pi2[j]
                   
     return B
         
@@ -192,9 +202,11 @@ def viterbi_modified(V, initial_distribution, a, b_our_mas, b_Skov, archaic_cove
     result = []
     for s in S:
         if s == 0:
-            result.append(0)
+            result.append("EU")
         elif s == 1:
-            result.append(1)
+            result.append("ND1")
+        elif s == 2:
+            result.append("ND2")
 
     return result
     
@@ -270,9 +282,11 @@ def viterbi_modified2(V, initial_distribution, a, b_our_mas, b_Skov, archaic_cov
     result = []
     for s in S:
         if s == 0:
-            result.append(0)
+            result.append("EU")
         elif s == 1:
-            result.append(1)
+            result.append("ND1")
+        elif s == 2:
+            result.append("ND2")
 
     return result
 
