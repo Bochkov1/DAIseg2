@@ -201,24 +201,13 @@ names=[str(names[i].replace('\n','')) for i in range(len(names))]
 
 
 #write into file arg.o results #Sample #Haplotype_number #Archaic tracts
-<<<<<<< HEAD
 with open(args.o+'.archaic.ND1.txt', "w") as f:
     for i in range(len(Tracts_HMM_mas)):
 #        for state in range(N):
-=======
-with open(args.o+'.archaic.txt', "w") as f:
-    for i in range(len(Tracts_HMM_mas)):
-        for state in range(N):
->>>>>>> a8c7100d7c1fc4d5b16def84d55a8852658a8203
 #            print(f"i: {i}, len(Tracts_HMM_mas): {len(Tracts_HMM_mas)}")
 #            print(f"len(Tracts_HMM_mas[i]): {len(Tracts_HMM_mas[i])}, state: {state}")
 #            print(f"Длина names: {len(names)}")
 #            print("Содержимое names:", names)
-<<<<<<< HEAD
-=======
-
-            f.write(names[int(i // 2)] + f'\t{state}\t' + str(Tracts_HMM_mas[i][state]) + '\n')
->>>>>>> a8c7100d7c1fc4d5b16def84d55a8852658a8203
 
         f.write(names[int(i // 2)] + str(Tracts_HMM_mas[i][1]) + '\n')
 
@@ -234,10 +223,5 @@ with open(args.o+'.archaic.ND2.txt', "w") as f:
         
 with open(args.o+'.modern.txt', "w") as f:
    for i in range(len(Tracts_HMM_mas)):
-<<<<<<< HEAD
       
         f.write(names[int(i // 2)]  + str(Tracts_HMM_mas[i][0]) + '\n')
-=======
-      for state in range(N):
-            f.write(names[int(i // 2)] + f'\t{state}\t' + str(Tracts_HMM_mas[i][state]) + '\n')
->>>>>>> a8c7100d7c1fc4d5b16def84d55a8852658a8203
