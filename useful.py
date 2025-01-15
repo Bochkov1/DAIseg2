@@ -193,12 +193,14 @@ def read_par_HMM(file):
 
 
 
-        Lambda_0=np.zeros(5)
+        Lambda_0=np.zeros(7)
+        Lambda_0[0] = float(f.readline())/GEN_time*MU*L
         Lambda_0[1] = float(f.readline())/GEN_time*MU*L
         Lambda_0[2] = float(f.readline())/GEN_time*MU*L
-        Lambda_0[0] = float(f.readline())/GEN_time*MU*L
-        Lambda_0[4] = float(f.readline())/GEN_time*MU* L
-        Lambda_0[3] = float(f.readline())
+        Lambda_0[3] = float(f.readline())/GEN_time*MU* L
+        Lambda_0[4] = float(f.readline())
+        Lambda_0[5] = float(f.readline())
+        Lambda_0[6] = float(f.readline())
 
     return GEN_time, MU, RR, L, Lambda_0
    
