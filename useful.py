@@ -228,7 +228,6 @@ def len_tracts(set_intervals):
         return s
     
 def confusion_mtrx(real, res_HMM, N):
-    
     conf_matrix = np.zeros((N,N))
     for i in range(N):
         for j in range(N):
@@ -263,7 +262,7 @@ def df_result(real_tracts_in_states, tracts_HMM, n_neanderthal, cut, n_ref_pop, 
 def read_out(file):
     with open(file, 'r') as f:
         l=f.readlines()
-
+        
     l=[l[i].split('\t') for i in range(len(l))]
     l=[l[i][2] for i in range(len(l))]
 
@@ -282,7 +281,7 @@ def read_out(file):
 # return European tracts with input=Neanderthal tracts
 def tracts_eu(tr_nd, seq_length):
     result = []
-
+    
     if tr_nd[0][0] > 0:
         result.append([0,tr_nd[0][0]-1])
         
@@ -291,9 +290,9 @@ def tracts_eu(tr_nd, seq_length):
         
     if tr_nd[-1][1]!=seq_length-1:
         result.append([tr_nd[-1][1]+1,seq_length-1])
-      
-    return result    
-
+        
+    return result
+    
 def noND_txt(ts_tree, n_ref_pop, n_eu):
     f_names = ['./Skov'+str(i)+'.txt' for i in range(n_eu)]
 
