@@ -23,7 +23,7 @@ def initA(t1, t2, p1, p2, L=1000, r=10 ** -8) -> np.array:
     
     A[2][0]=np.exp(-L*r*t2)*(1 - np.exp(-L*r*(t1-t2)))*(1-p2)+(1 - np.exp(-L*r*t2))*(1-p1)*(1-p2)
     A[2][1]=(1 - np.exp(-L*r*t2))*p1
-    A[2][2]=1--A[2][0] - A[2][1]
+    A[2][2]=1-A[2][0] - A[2][1]
     
     return A
 
