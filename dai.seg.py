@@ -152,13 +152,13 @@ names=[str(names[i].replace('\n','')) for i in range(len(names))]
 with open(args.o+'.archaic.ND1.txt', "w") as f:
     for i in range(len(Tracts_HMM_mas)):
 
-        f.write(names[int(i // 2)] + str(Tracts_HMM_mas[i][1]) + '\n')
+        f.write(names[int(i // 2)] + '\t'+str(int(i // 2))+'\t'+str(Tracts_HMM_mas[i][1]) + '\n')
 
 with open(args.o+'.archaic.ND2.txt', "w") as f:
     for i in range(len(Tracts_HMM_mas)):
-        f.write(names[int(i // 2)]  + str(Tracts_HMM_mas[i][2]) + '\n')
+        f.write(names[int(i // 2)]  + '\t'+str(int(i // 2))+'\t'+str(Tracts_HMM_mas[i][2]) + '\n')
         
 with open(args.o+'.modern.txt', "w") as f:
    for i in range(len(Tracts_HMM_mas)):
       
-        f.write(names[int(i // 2)]  + str(Tracts_HMM_mas[i][0]) + '\n')
+        f.write(names[int(i // 2)]  + '\t'+str(int(i // 2))+'\t'+str(Tracts_HMM_mas[i][0]) + '\n')
