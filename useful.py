@@ -7,34 +7,10 @@ import pandas as pd
 
 
 # two set of intervals intersection 
-def intersections(a,b):
-    if b==[[]]:
-        return a
-    ranges = []
-    i = j = 0
-    while i < len(a) and j < len(b):
-        a_left, a_right = a[i]
-        b_left, b_right = b[j]
 
-        if a_right < b_right:
-            i += 1
-        else:
-            j += 1
 
-        if a_right >= b_left and b_right >= a_left:
-            end_pts = sorted([a_left, a_right, b_left, b_right])
-            middle = [end_pts[1], end_pts[2]]
-            ranges.append(middle)
-
-    ri = 0
-    while ri < len(ranges)-1:
-        if ranges[ri][1] == ranges[ri+1][0]:
-            ranges[ri:ri+2] = [[ranges[ri][0], ranges[ri+1][1]]]
-        ri += 1
-    return ranges
     
-    
-
+N=3
 
 def exclude_gaps(set1, set2): #set2 is set of gaps [[],[],[]]
 
@@ -218,7 +194,38 @@ def ne_set_interval(set_intervals):
             ne_set.append([set_intervals[j-1][1]+1, set_intervals[j][0]-1])
     return ne_set
 
+
+def intersections(a,b):
+
+    if a==[] or b==[] or a==[[]] or b==[[]]:
+        print('!!!!!!!')
+        return [[]]
+
+    ranges = []
+    i = j = 0
+    while i < len(a) and j < len(b):
+        a_left, a_right = a[i]
+        b_left, b_right = b[j]
+
+        if a_right < b_right:
+            i += 1
+        else:
+            j += 1
+
+        if a_right >= b_left and b_right >= a_left:
+            end_pts = sorted([a_left, a_right, b_left, b_right])
+            middle = [end_pts[1], end_pts[2]]
+            ranges.append(middle)
+
+    ri = 0
+    while ri < len(ranges)-1:
+        if ranges[ri][1] == ranges[ri+1][0]:
+            ranges[ri:ri+2] = [[ranges[ri][0], ranges[ri+1][1]]]
+        ri += 1
+    return ranges
 def len_tracts(set_intervals):
+    if set_intervals==[[]]:
+        return 0
     if len(set_intervals)==0:
         return 0
     else:
@@ -227,31 +234,38 @@ def len_tracts(set_intervals):
             s+= set_intervals[j][1]-set_intervals[j][0]+1
         return s
     
-def confusion_mtrx(real, res_HMM, N):
-    conf_matrix = np.zeros((N,N))
-    for i in range(N):
-        for j in range(N):
-            conf_matrix[i,j] =int(len_tracts(intersections(real[i], res_HMM[j])))
-    return conf_matrix
+def confusion_mtrx(real, res_HMM):
+    N=3
+    conf_matrix = np.zeros((N,N))   
+    
+    for i in range(N):        
+        for j in range(N):                
+            
+            conf_matrix[i,j] =int(len_tracts(intersections(real[j], res_HMM[i])))
+
+    return np.array(conf_matrix)
 
 def classification_rpt(conf_matrix):
-    N=len(conf_matrix)
     clas_report = {}
     for i in range(N):
         dd={}
-        dd['precision'] = round(conf_matrix[i,i]/sum(conf_matrix[:,i]),7)
-        dd['recall'] = round(conf_matrix[i,i]/sum(conf_matrix[i,:]),7)
+        dd['precision'] = round(conf_matrix[i,i]/sum(conf_matrix[i,:]),7)
+        dd['recall'] = round(conf_matrix[i,i]/sum(conf_matrix[:,i]),7)
         dd['f1-score'] = round(2*dd['recall']*dd['precision']/(dd['recall']+dd['precision']), 7)
         clas_report[str(i)] = dd
-    return clas_report 
+
+    return clas_report
+
+
     
 def df_result(real_tracts_in_states, tracts_HMM, n_neanderthal, cut, n_ref_pop, n_eu, N):
+
 
     df= pd.DataFrame(columns=['State', 'Value', 'Score', 'n_eu',
                                        'n_neand', 'L',  'n_ref_pop'])
 
     for idx in range(n_eu):
-        cl_report = classification_rpt(confusion_mtrx(real_tracts_in_states[idx], tracts_HMM[idx], N))
+        cl_report = classification_rpt(confusion_mtrx(real_tracts_in_states[idx], tracts_HMM[idx]))
         for j in range(N):
             df.loc[len(df.index)] = [j, cl_report[str(j)]['precision'], 'precision',idx, n_neanderthal, cut,
                                          n_ref_pop]
@@ -272,8 +286,11 @@ def read_out(file):
         l2=l[j].replace('[[','').replace(']]','').replace('\n','').split('], [')
         for j1 in range(len(l2)):
             m2=l2[j1].split(', ')
-            m2=[int(m2[j2]) for j2 in range(len(m2))]
-            m1.append(m2)
+            if m2!=['[]']:
+                m2=[int(m2[j2]) for j2 in range(len(m2))]
+                m1.append(m2)
+            else:
+                m1=[[]]
         nd_HMM_tracts.append(m1)
     return nd_HMM_tracts
     
