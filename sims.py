@@ -3,6 +3,8 @@
 
 import msprime
 import numpy as np
+import tskit
+
 
 def history_archaic(
     gen_time,
@@ -23,35 +25,70 @@ def history_archaic(
     p_admix,
     p_admix2
 ):
-    n_ANC, n_ND, n_AMH, n_OOA, n_AF, n_EU = n_e
-    t_NEAND_migration, t_NEAND_AMH, t_OOF_AF, t_SECOND_NEAND_MIGRATION = t
+    n_ANC, n_ND, n_AMH, n_OOA, n_AF, n_EU, n_Sample = n_e
+    t_NEAND_migration, t_NEAND_AMH, t_OOF_AF, t_SECOND_NEAND_MIGRATION, t_ND_SPLIT, t_Split_EU_Sample = t
     
     demography = msprime.Demography()
     demography.add_population(name="AF", initial_size=n_AF)
     demography.add_population(name="EU", initial_size=n_EU)
     demography.add_population(name="AMH", initial_size=n_AMH)
     demography.add_population(name="NEAND", initial_size=n_ND)
+    demography.add_population(name="ND1", initial_size=3400)
+    demography.add_population(name="ND2", initial_size=3400)
     demography.add_population(name="ANCES", initial_size=n_ANC)  #common population for Neanderthal and AMH
     demography.add_population(name="OOA", initial_size = n_OOA)
-    demography.add_population(name="OOA1", initial_size = n_OOA)
+    demography.add_population(name="OOA_admixed", initial_size=n_OOA)
+    demography.add_population(name="SAMPLE", initial_size=n_Sample)
+    demography.add_population(name="SAMPLE_admixed", initial_size=n_Sample)
     
     
     demography.add_population_parameters_change(time=0, initial_size=n_EU, population=1, growth_rate=gr_rt)
     demography.add_population_parameters_change(time=t_eu_growth, initial_size=n_eu_growth, population=1, growth_rate=0)
     
-    demography.add_admixture(time=t_SECOND_NEAND_MIGRATION, derived="EU", ancestral=["OOA1", "NEAND"],
-                             proportions=[1 - p_admix2, p_admix2])
-    demography.add_admixture(time=t_NEAND_migration, derived="OOA1", ancestral=["OOA", "NEAND"],
-                             proportions=[1-p_admix, p_admix])
-
-
-    demography.add_population_split(time = t_OOF_AF, derived=["AF", "OOA"], ancestral="AMH")
-    demography.add_population_split(time = t_NEAND_AMH, derived=["AMH", "NEAND"], ancestral="ANCES")
+    demography.add_population_split(
+        time = t_OOF_AF,
+        derived = ["AF", "OOA"],
+        ancestral = "AMH"
+    )
     
+    demography.add_population_split(
+        time = t_NEAND_AMH,
+        derived = ["AMH", "NEAND"],
+        ancestral = "ANCES"
+    )
+
+    # 2. Разделение NEAND на ND1 и ND2
+    demography.add_population_split(
+        time = t_ND_SPLIT,
+        derived = ["ND1", "ND2"],
+        ancestral = "NEAND"
+    )
 
 
+    # 4. Примесь ND1 -> OOA (адмиксуем ND1 в OOA)
+    #    proportions=[(1 - p_admix1), p_admix1]
+    demography.add_admixture(
+        time = t_NEAND_migration,
+        derived = "OOA_admixed",
+        ancestral = ["OOA", "ND1"],
+        proportions = [1 - p_admix, p_admix]
+    )
 
-    
+    # 5. Разделение OOA на EU и SAMPLE
+    demography.add_population_split(
+        time = t_Split_EU_Sample,
+        derived = ["EU", "SAMPLE"],
+        ancestral = "OOA_admixed"
+    )
+
+    # 6. Примесь ND2 -> SAMPLE
+    demography.add_admixture(
+        time = t_SECOND_NEAND_MIGRATION,
+        derived = "SAMPLE_admixed",
+        ancestral = ["SAMPLE", "ND2"],
+        proportions = [1 - p_admix2, p_admix2]
+    )
+
     demography.sort_events()
     print(demography.debug())
 
@@ -59,7 +96,9 @@ def history_archaic(
         samples= [
             msprime.SampleSet(n_eu, ploidy=1, population='EU'),
             msprime.SampleSet(n, ploidy=1, population='AF'),
-            msprime.SampleSet(n_neand, ploidy=1, population='NEAND', time = t_neand_samples)
+              msprime.SampleSet(n_Sample, ploidy=1, population="SAMPLE_admixed"),  # Sample from admixed population
+            msprime.SampleSet(n_neand//2, ploidy=1, population="ND1", time=t_neand_samples),  # Split Neanderthal samples
+            msprime.SampleSet(n_neand//2, ploidy=1, population="ND2", time=t_neand_samples)
         ],
         ploidy=1,
         sequence_length=len_seq,
@@ -88,6 +127,21 @@ def remove_one(m):
                 break
     return mas
 
+#def remove_one(m):
+#    # Создадим копию и отсортируем интервалы по началу
+#    mas = sorted(m, key=lambda interval: interval[0])
+#    prev_len = len(mas)
+#    while connected(mas):
+#        for i in range(len(mas)-1):
+#            if mas[i][1] == mas[i+1][0]:
+#                mas[i][1] = mas[i+1][1]
+#                mas.pop(i+1)
+#                break
+#        # Если после объединения длина не уменьшилась, прерываем цикл
+#        if len(mas) == prev_len:
+#            break
+#        prev_len = len(mas)
+#    return mas
 
 #Вход: ts, название популяции, индивид(которого мы препарируем), время предка
 def get_migrating_tracts_ind(ts, pop_name, ind, T_anc):
@@ -142,9 +196,9 @@ def tracts_eu(tr_nd, seq_length):
 
 
 
-#from Skov
+##from Skov
 def print_neand_dosages(ts):
-    
+
     seq_len = ts.get_sequence_length()
 
     ME_ids = ts.get_samples(1)
@@ -189,6 +243,3 @@ def print_neand_dosages(ts):
     true_de_segs = [combine_segs(np.array(de_seg[i]), True) for i in sorted(de_seg.keys())]
     print("Neand ancestry: ", true_de_prop)
       
-
-
-   
